@@ -1,11 +1,13 @@
-
 from datetime import timedelta
 
 # The DAG object; we'll need this to instantiate a DAG
 from airflow import DAG
 # Operators; we need this to operate!
 from airflow.operators.bash_operator import BashOperator
+from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
+import time
+
 # These args will get passed on to each operator
 # You can override them on a per-task basis during operator initialization
 default_args = {
@@ -31,6 +33,13 @@ default_args = {
     # 'sla_miss_callback': yet_another_function,
     # 'trigger_rule': 'all_success'
 }
+
+
+def sleep():
+    time.sleep(1)
+    print('sleep!')
+
+
 dag = DAG(
     'tutorial',
     default_args=default_args,
@@ -77,4 +86,17 @@ t3 = BashOperator(
     dag=dag,
 )
 
-t1 >> [t2, t3]
+t4 = PythonOperator(
+    task_id='sleep1',
+    depends_on_past=False,
+    python_callable=sleep,
+    dag=dag
+)
+t5 = PythonOperator(
+    task_id='sleep2',
+    depends_on_past=False,
+    python_callable=sleep,
+    dag=dag
+)
+
+t1 >> [t2, t3] >> t4 >> t5
